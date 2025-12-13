@@ -1,0 +1,5 @@
+{
+  "backend_developer:fresher": ["SQL", "DSA", "OOP", "REST APIs"],
+  "data_analyst:fresher": ["SQL", "Python", "Excel"],
+  "frontend_developer:fresher": ["React", "JavaScript", "CSS"]
+}
