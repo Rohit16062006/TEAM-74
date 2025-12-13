@@ -29,10 +29,16 @@ export const useApi = () => {
         return response.data;
     };
 
+    const getDashboard = async (planId) => {
+        const response = await api.get(`/dashboard?plan_id=${planId}`);
+        return response.data;
+    };
+
     return {
         createPlan,
         getDailyTask,
         submitAnswer,
         getReadiness,
+        getDashboard,
     };
 };
