@@ -10,7 +10,8 @@ app = FastAPI(title="PrepAI Hackathon Backend")
 
 # CORS
 origins = [
-    "http://localhost:3000",
+    "http://localhost:5173",  # Vite default port
+    "http://localhost:3000",  # Create React App default port
 ]
 
 app.add_middleware(
