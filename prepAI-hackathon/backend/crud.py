@@ -73,3 +73,18 @@ def get_average_readiness(db: Session, plan_id: int):
 
 def get_previous_scores(db: Session, plan_id: int, limit: int = 5):
     return db.query(models.Score).filter(models.Score.plan_id == plan_id).order_by(models.Score.recorded_at.desc()).limit(limit).all()
+
+def get_completed_task_count(db: Session, plan_id: int):
+    # Count unique tasks that have an attempt
+    return db.query(models.InterviewAttempt.task_id)\
+             .join(models.DailyTask, models.InterviewAttempt.task_id == models.DailyTask.id)\
+             .filter(models.DailyTask.plan_id == plan_id)\
+             .distinct()\
+             .count()
+
+def get_recent_tasks(db: Session, plan_id: int, limit: int = 3):
+    return db.query(models.DailyTask)\
+             .filter(models.DailyTask.plan_id == plan_id)\
+             .order_by(models.DailyTask.day.desc(), models.DailyTask.id.desc())\
+             .limit(limit)\
+             .all()

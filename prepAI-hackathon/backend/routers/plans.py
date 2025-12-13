@@ -2,10 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import schemas, crud
-from services import skill_mapper
-import random
+from services import skill_mapper, adaptive_scheduler
 
 router = APIRouter()
+
+@router.post("/adapt-schedule", response_model=schemas.AdaptScheduleResponse)
+def adapt_schedule(request: schemas.AdaptScheduleRequest, db: Session = Depends(get_db)):
+    result = adaptive_scheduler.adapt_plan(db, request.plan_id, request.task_id, request.technical_score)
+    return schemas.AdaptScheduleResponse(**result)
 
 @router.post("/create-plan", response_model=schemas.PlanResponse)
 def create_plan(plan: schemas.PlanCreate, db: Session = Depends(get_db)):

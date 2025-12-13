@@ -30,3 +30,27 @@ class ScoreResponse(BaseModel):
 class ReadinessResponse(BaseModel):
     readiness: int
     trend: str
+
+class AdaptScheduleRequest(BaseModel):
+    plan_id: int
+    task_id: int
+    technical_score: int
+
+class AdaptScheduleResponse(BaseModel):
+    adapted: bool
+    new_tasks_day_5: List[str]
+
+class SkillProgress(BaseModel):
+    skill: str
+    level: int  # 0-100
+
+class DashboardResponse(BaseModel):
+    readiness: int
+    trend: str
+    completed_tasks: int
+    total_days: int
+    current_day: int
+    skill_stats: List[SkillProgress]
+    recent_activity: List[TaskResponse]
+
+
