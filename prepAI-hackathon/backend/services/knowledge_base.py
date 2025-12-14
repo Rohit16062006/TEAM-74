@@ -1,5 +1,80 @@
 
-KNOWLEDGE_BASE = {
+import os
+import json
+from dotenv import load_dotenv
+from functools import lru_cache
+
+load_dotenv()
+
+# Attempt to load Gemini
+try:
+    import google.generativeai as genai
+    HAS_GEMINI = True
+except ImportError:
+    HAS_GEMINI = False
+    print("Warning: google-generativeai not installed. Using static knowledge base.")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+model = None
+if HAS_GEMINI and GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        
+        # Configure safety settings to be more permissive for educational content
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_NONE",
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_NONE",
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_NONE",
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_NONE",
+            },
+        ]
+        
+        # Try gemini-1.5-flash first (newer, faster model)
+        try:
+            model = genai.GenerativeModel(
+                'gemini-1.5-flash',
+                safety_settings=safety_settings
+            )
+            # Test the model with a simple call
+            test_response = model.generate_content("Hi")
+            print("✅ Gemini API Configured Successfully (gemini-1.5-flash)")
+        except Exception as flash_error:
+            # Fallback to gemini-pro
+            try:
+                model = genai.GenerativeModel(
+                    'gemini-pro',
+                    safety_settings=safety_settings
+                )
+                test_response = model.generate_content("Hi")
+                print("✅ Gemini API Configured Successfully (gemini-pro)")
+            except Exception as pro_error:
+                print(f"⚠️ Gemini models not accessible: {pro_error}")
+                print("   Possible reasons:")
+                print("   1. API key is for wrong service (use AI Studio key, not Cloud Console)")
+                print("   2. Gemini API not available in your region")
+                print("   3. API quota exceeded or billing not enabled")
+                print("   → Using static knowledge base instead.")
+                model = None
+                
+    except Exception as e:
+        print(f"⚠️ Error configuring Gemini: {e}")
+        print("   Falling back to static knowledge base.")
+        model = None
+
+# Fallback static knowledge base (abbreviated for key topics)
+STATIC_KNOWLEDGE_BASE = {
     # --------------------------------------------------------------------------------
     # SQL & DATABASES
     # --------------------------------------------------------------------------------
@@ -1039,15 +1114,121 @@ In JS, `this` changes depending on *Who called the function*.
 """
 }
 
-# IMPORTANT: Renamed from get_explanation to support the new structure, 
-# but we can keep get_explanation as a wrapper or just replace.
-# The plan says we need both.
-def get_explanations(task_text):
+# ============================================================================
+# DYNAMIC EXPLANATION GENERATION WITH GEMINI
+# ============================================================================
+
+@lru_cache(maxsize=100)
+def generate_standard_explanation(task_text: str) -> str:
+    """
+    Generates a detailed technical explanation using Gemini AI.
+    Cached to avoid redundant API calls.
+    """
+    if not model:
+        fallback = STATIC_KNOWLEDGE_BASE.get(task_text, None)
+        if fallback:
+            return fallback
+        return "⚠️ **Dynamic explanations unavailable.** Please configure GEMINI_API_KEY in your .env file to enable AI-powered explanations."
+    
+    try:
+        prompt = f"""
+You are an expert technical interviewer and educator. Provide a comprehensive, structured explanation for the following interview question/topic:
+
+**Question/Topic:** {task_text}
+
+Your explanation should include:
+1. 🎯 **Core Concept** - What is this about?
+2. 📚 **Detailed Explanation** - Deep dive with examples
+3. 💻 **Code Examples** - Practical implementation (if applicable)
+4. 🤔 **Critical Thinking** - Edge cases, common mistakes, performance considerations
+
+Format using Markdown with emojis. Be thorough but concise. Include code blocks where relevant.
+"""
+        
+        response = model.generate_content(prompt)
+        
+        # Check if response was blocked
+        if not response.text or len(response.text.strip()) == 0:
+            print(f"⚠️ Gemini returned empty response for: {task_text}")
+            print(f"   Prompt feedback: {response.prompt_feedback if hasattr(response, 'prompt_feedback') else 'N/A'}")
+            raise Exception("Empty response from Gemini")
+            
+        return response.text
+        
+    except Exception as e:
+        error_msg = str(e)
+        print(f"❌ Gemini generation failed for '{task_text}': {error_msg}")
+        
+        # Check for specific errors
+        if "API_KEY" in error_msg.upper() or "PERMISSION" in error_msg.upper():
+            print("   → API Key issue detected. Please verify your GEMINI_API_KEY.")
+        elif "QUOTA" in error_msg.upper() or "RATE" in error_msg.upper():
+            print("   → Rate limit or quota exceeded. Please wait or upgrade your plan.")
+        elif "REGION" in error_msg.upper() or "LOCATION" in error_msg.upper():
+            print("   → Region restriction. Gemini may not be available in your location.")
+        
+        # Try fallback
+        fallback = STATIC_KNOWLEDGE_BASE.get(task_text, None)
+        if fallback:
+            print(f"   ✓ Using static fallback content.")
+            return fallback
+        
+        return f"⚠️ **Explanation temporarily unavailable.**\n\nError: {error_msg}\n\nPlease check your Gemini API configuration or try again later."
+
+
+@lru_cache(maxsize=100)
+def generate_alternative_explanation(task_text: str) -> str:
+    """
+    Generates a simplified, analogy-based explanation using Gemini AI.
+    Cached to avoid redundant API calls.
+    """
+    if not model:
+        return ALT_KNOWLEDGE_BASE.get(task_text, None)
+    
+    try:
+        prompt = f"""
+You are a master teacher who explains complex concepts using simple analogies and metaphors.
+
+**Question/Topic:** {task_text}
+
+Explain this concept as if you're teaching a 10-year-old or using a real-world analogy.
+
+Requirements:
+- Use everyday analogies (cooking, sports, house, travel, etc.)
+- Start with an emoji
+- Keep it under 150 words
+- Make it memorable and fun
+- No technical jargon
+
+Format: Start with "🎈 **Analogy:**" then your explanation.
+"""
+        
+        response = model.generate_content(prompt)
+        
+        if not response.text or len(response.text.strip()) == 0:
+            raise Exception("Empty response from Gemini")
+            
+        return response.text
+        
+    except Exception as e:
+        print(f"❌ Gemini alt generation failed for '{task_text}': {e}")
+        return ALT_KNOWLEDGE_BASE.get(task_text, None)
+
+
+def get_explanations(task_text: str) -> dict:
+    """
+    Returns both standard and alternative explanations.
+    Uses Gemini AI if available, otherwise falls back to static content.
+    """
     return {
-        "standard": KNOWLEDGE_BASE.get(task_text, "No specific explanation available."),
-        "alt": ALT_KNOWLEDGE_BASE.get(task_text, None)
+        "standard": generate_standard_explanation(task_text),
+        "alt": generate_alternative_explanation(task_text)
     }
 
-def get_explanation(task_text):
-    # Backwards compatibility wrapper just in case
-    return KNOWLEDGE_BASE.get(task_text, "No specific explanation available.")
+
+def get_explanation(task_text: str) -> str:
+    """
+    Backwards compatibility wrapper.
+    Returns standard explanation only.
+    """
+    return generate_standard_explanation(task_text)
