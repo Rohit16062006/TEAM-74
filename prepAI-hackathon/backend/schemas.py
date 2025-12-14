@@ -34,6 +34,8 @@ class TaskResponse(BaseModel):
     task: str
     type: str
     skill: str
+    explanation: Optional[str] = None
+    explanation_alt: Optional[str] = None
 
     class Config:
         from_attributes = True
