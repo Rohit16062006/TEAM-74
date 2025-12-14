@@ -160,7 +160,7 @@ const Dashboard = () => {
                 </div>
                 <div className="divide-y divide-slate-100">
                     {recentActivityData.map((task) => (
-                        <div key={task.task_id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <div key={task.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${task.type === 'interview' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
                                     {task.type === 'interview' ? <Activity className="w-5 h-5" /> : <Calendar className="w-5 h-5" />}

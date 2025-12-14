@@ -38,10 +38,10 @@ def create_interview_attempt(db: Session, task_id: int, answer_text: str, scores
     db_attempt = models.InterviewAttempt(
         task_id=task_id,
         answer_text=answer_text,
-        technical_score=scores['technical'],
-        behavioral_score=scores['behavioral'],
-        comm_score=scores['comm'],
-        readiness_score=scores['readiness']
+        technical_score=scores['technical_score'],
+        behavioral_score=scores['behavioral_score'],
+        comm_score=scores['comm_score'],
+        readiness_score=scores['readiness_score']
     )
     db.add(db_attempt)
     db.commit()

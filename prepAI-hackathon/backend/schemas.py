@@ -53,6 +53,7 @@ class ScoreResponse(BaseModel):
     behavioral_score: float
     comm_score: float
     readiness_score: float
+    feedback: Optional[str] = None
 
 
 class ReadinessResponse(BaseModel):

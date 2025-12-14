@@ -17,7 +17,7 @@ const Feedback = () => {
     if (!state?.result) return null;
 
     const { result } = state;
-    const { technical, behavioral, comm, readiness } = result;
+    const { technical_score: technical, behavioral_score: behavioral, comm_score: comm, readiness_score: readiness } = result;
 
     // Gauge calculation
     const gaugeStyle = {
@@ -52,6 +52,21 @@ const Feedback = () => {
                     </div>
                 </div>
 
+                {result.feedback && (
+                    <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-start gap-3">
+                        <div className="mt-1">
+                            <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                            </span>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-sm uppercase tracking-wide mb-1">Adaptive AI Update</h4>
+                            <p className="text-sm">{result.feedback}</p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="pt-8 border-t border-slate-100 flex gap-4">
                     <button
                         onClick={() => navigate('/dashboard')}
@@ -60,10 +75,14 @@ const Feedback = () => {
                         <Home className="w-4 h-4" /> Dashboard
                     </button>
                     <button
-                        onClick={() => navigate(-1)} // Go back to maybe calendar?
+                        onClick={() => {
+                            const planId = localStorage.getItem('currentPlanId');
+                            if (planId) navigate(`/calendar/${planId}`);
+                            else navigate('/dashboard');
+                        }}
                         className="flex-1 py-3 px-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
                     >
-                        Next Task <ArrowRight className="w-4 h-4" />
+                        Back to Plan <ArrowRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>

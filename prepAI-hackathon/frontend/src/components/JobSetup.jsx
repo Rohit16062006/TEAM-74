@@ -19,6 +19,9 @@ function JobSetup() {
         skills,
       });
 
+      // Store plan ID for dashboard
+      localStorage.setItem('currentPlanId', response.data.id);
+
       // Navigate using returned plan ID
       navigate(`/calendar/${response.data.id}`);
     } catch (error) {
@@ -33,12 +36,13 @@ function JobSetup() {
 
       <input
         type="text"
-        placeholder="Job Title"
+        placeholder="Job Title (e.g. Frontend Developer, Data Scientist)"
         value={jobTitle}
         onChange={(e) => setJobTitle(e.target.value)}
         className="border p-2 rounded w-full mb-3"
       />
 
+      <label className="block text-sm text-gray-600 mb-1">Experience Level</label>
       <select
         value={experience}
         onChange={(e) => setExperience(e.target.value)}
@@ -49,6 +53,7 @@ function JobSetup() {
         <option>3+ Years</option>
       </select>
 
+      <label className="block text-sm text-gray-600 mb-1">Duration (Days)</label>
       <input
         type="number"
         value={days}
@@ -58,9 +63,9 @@ function JobSetup() {
 
       <input
         type="text"
-        placeholder="Skills (comma separated)"
+        placeholder="Skills (Optional, e.g. React, Python)"
         onChange={(e) =>
-          setSkills(e.target.value.split(",").map((s) => s.trim()))
+          setSkills(e.target.value.split(",").map((s) => s.trim()).filter((s) => s))
         }
         className="border p-2 rounded w-full mb-4"
       />

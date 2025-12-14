@@ -6,13 +6,16 @@ import { Mic, Send, AlertCircle } from 'lucide-react';
 const MockInterview = () => {
     const { taskId } = useParams();
     const navigate = useNavigate();
-    const { submitAnswer } = useApi();
+    const { submitAnswer, getTaskById } = useApi();
     const [answer, setAnswer] = useState('');
     const [loading, setLoading] = useState(false);
+    const [task, setTask] = useState(null);
 
-    // In a real app, we'd fetch the task details here to show the question.
-    // For now, we assume the user knows context or we'd fetch task by ID if backend supported /tasks/:id
-    // We'll show a generic prompts or just "Provide your solution".
+    React.useEffect(() => {
+        getTaskById(taskId)
+            .then(setTask)
+            .catch(console.error);
+    }, [taskId]);
 
     const handleSubmit = async () => {
         if (!answer.trim()) return;
@@ -33,6 +36,8 @@ const MockInterview = () => {
         }
     };
 
+    if (!task) return <div className="p-8 text-center">Loading Interview...</div>;
+
     return (
         <div className="max-w-3xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -41,9 +46,17 @@ const MockInterview = () => {
                         <div className="w-2 h-2 rounded-full bg-emerald-400/50 animate-pulse"></div>
                         <span className="font-mono text-sm uppercase tracking-widest">Live Interview Session</span>
                     </div>
-                    <h2 className="text-3xl font-bold mb-4">Technical Assessment</h2>
-                    <p className="text-slate-400 text-lg">
-                        Please provide a comprehensive answer. The AI will evaluate your technical accuracy, clarity, and completeness.
+                    <div className="flex justify-between items-start mb-2">
+                        <h2 className="text-3xl font-bold">Technical Assessment</h2>
+                        <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded border border-slate-700">
+                            {task.skill} - Day {task.day}
+                        </span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-indigo-400">
+                        {task.type} Problem
+                    </h3>
+                    <p className="text-slate-300 text-lg leading-relaxed bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                        {task.task}
                     </p>
                 </div>
 

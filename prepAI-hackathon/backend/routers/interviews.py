@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import schemas, crud
-from services import ai_scoring
+from services import ai_scoring, adaptive_scheduler
 
 router = APIRouter()
 
@@ -40,6 +40,14 @@ def submit_answer(attempt: schemas.AnswerSubmit, db: Session = Depends(get_db)):
     # We should interpret this score as the new readiness for the plan?
     # Or just record it.
     # Let's record a new Score entry for the plan.
-    crud.create_score(db, task.plan_id, scores['readiness'])
+    crud.create_score(db, task.plan_id, scores['readiness_score'])
     
-    return schemas.ScoreResponse(**scores)
+    # 5. Dynamic Adaptation (Real-time)
+    adaptation = adaptive_scheduler.adapt_plan(db, task.plan_id, task.id, scores['readiness_score'])
+    
+    # Add feedback to response if adapted
+    response_data = scores.copy()
+    if adaptation['adapted']:
+        response_data['feedback'] = adaptation['message']
+    
+    return schemas.ScoreResponse(**response_data)

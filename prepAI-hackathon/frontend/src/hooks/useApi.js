@@ -53,11 +53,17 @@ export const useApi = () => {
     return response.data;
   };
 
+  const getTaskById = async (taskId) => {
+    const response = await api.get(`/task/${taskId}`);
+    return response.data;
+  };
+
   return {
     createPlan,
     getDailyTask,
     submitAnswer,
     getReadiness,
     getDashboard,
+    getTaskById,
   };
 };

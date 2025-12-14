@@ -66,7 +66,7 @@ def get_dashboard(plan_id: int, db: Session = Depends(get_db)):
     recent_tasks = crud.get_recent_tasks(db, plan_id, limit=3) # Need to add this
     recent_activity = [
         schemas.TaskResponse(
-            task_id=t.id,
+            id=t.id,
             task=t.task,
             type=t.type,
             skill=t.skill
